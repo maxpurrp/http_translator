@@ -80,12 +80,10 @@ def hundler():
     if Unset and to_lang:
         out = {'error' : False,
                'lang' : to_lang}
-        print(Unset, to_lang)
         return out
     else:
         out = {'error' : True,
                'description' : 'Default language is not exhibited'}
-        print(Unset, to_lang)
         return out
 
 run(host='92.118.114.138', port=8080)
