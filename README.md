@@ -1,6 +1,7 @@
-# HTTP-TRANSLATER
+# HTTP-TRANSLATOR
 
 С помощью данного переводчика вы можете перевести слово или предложение путем отправки запроса на сервер и получить ответ. Также можно получить список поддерживаемых языков, установить язык для перевода по умолчанию или  указать его самостоятельно. Ниже приведены запросы и их описание более детально.
+Для запуска переводчика необходим сервер, поддерживающий язык программирования Python,  так же нужно установить библиотеку "bottle". 
 
 
 ## 1)Запрос на получение доступных языков
@@ -13,12 +14,12 @@ Request:
 	Response:
 		HTTP Code 200
 		Headers: Content-type: json
-		Body{“error”:False, “languages”:[“ru”,”en”]
+		Body{“error”: False, “languages” : [“ru”,”en”]}
 
 	Errors:
-		HTTP  Code 500 -внутренние ошибки сервера
+		HTTP  Code 500 - внутренние ошибки сервера
 		Headers: Content-type: json
-		Body{“error”:True,”description”:”Error-description”}
+		Body{“error” : True, ”description” : ”Error-description”}
 
 ## 2) Запрос для перевода текста на выбранный язык.
 
@@ -28,23 +29,23 @@ Request:
 
 	Method: Post
 		Path: /api/v1/translate
-		Headers: Content-type: json
-		Body: {“text”:”Hello world”, “to_lang”:”ru”}	
+		Headers: Content-type : json
+		Body: {“text” : ”Hello world”, “to_lang” : ”ru”}	
 
 	Response:
 		Headers: Content-type: json
 	HTTP Code 200
-		Body: {“error”:False, “result”:”Привет  мир”}
+		Body: {“error” : False, “result” : ”Привет  мир”}
 
 Errors:
 
 	HTTP  Code 400 – ошибка в пользовательских данных
 		Headers: Content-type: json
-		Body: {“error”:True, “description”:”Error description”
+		Body: {“error” : True, “description” : ”Error description”}
 		
 	HTTP Code 500 -внутренние  ошибки  сервера
 		Headers: Content-type: json
-		Body: {“error”:True,”description”:”Error-description”}
+		Body: {“error” : True,”description” : ”Error-description”}
 ## 3) Запрос для установки языка по умолчанию для перевода текста
 Язык по умолчанию не должен быть установлен при старте программы. Если поле “Unset” указано в True, то необходимо перестать использовать язык по умолчанию.
 Request:
@@ -52,20 +53,20 @@ Request:
 	Method: Post
 		Path: /api/v1/default_language
 		Headers: Content-type: json
-		Body: { “Unset”:False,“lang”:”ru”}
+		Body: {“Unset” : False,“lang” : ”ru”}
 	Response:
 		Headers: Content-type: json
 	HTTP Code 200
-		Body: { “error”:False}
+		Body: {“error” : False}
 Errors:
 
 	HTTP Code 400 – ошибка  в  пользовательских  данных
 		Headers: Content-type: json
-		Body:{“error”:True, “description”:”Error description”
+		Body:{“error” : True, “description” : ”Error description”}
 		
 	HTTP Code 500 -внутренние  ошибки  сервера
 		Headers: Content-type: json
-		Body:{“error”:True,”description”:”Error-description”}
+		Body:{“error” : True, ”description” : ”Error-description”}
 
 ## 4) Запрос для получения языка по умолчанию
 
@@ -77,14 +78,14 @@ Request:
 		Headers: Content-type: json
 		
 	HTTP Code 200
-		Body:{ “error”:False,”lang”:”ru”}
+		Body:{“error” : False,”lang” : ”ru”}
 
 Errors:
 
 	HTTP  Code 400 – ошибка в пользовательских данных
 		Headers: Content-type: json
-		Body:{“error”:True, “description”:”Error description”
+		Body:{“error” : True, “description” : ”Error description”
 			
 	HTTP Code 500 -внутренние  ошибки  сервера
 		Headers: Content-type: json
-		Body;{“error”:True,”description”:”Error-description”}
+		Body;{“error” : True, ”description” : ”Error-description”}
