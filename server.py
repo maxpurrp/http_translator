@@ -18,60 +18,74 @@ def check_lang(lang):
 def hundler():
     res = GoogleTranslator()
     res = res.get_languages_list()
-    out = ''
-    for key in res:
-        out+= str(key +" " + res[key]) + "\n"
-    return out
-
+    out = []
+    for key, value in res.items():
+        out.append(value)
+    ign = {"error": False, "languages" : out}
+    return ign
+    
 
 @post('/api/v1/translate')
 def hundler():
     res = GoogleTranslator()
-    for key in request.json:
-        if key and request.json[key] and check_lang(request.json[key]) == False:
-            return "Uncorrect language"
-        if key and request.json[key] and check_lang(request.json[key]):
-            return res.translate(text = key,to_lang=request.json[key])
-            ### def lang is None
-        if Unset and to_lang:
-            ### def lang is True
-            return res.translate(text = key,to_lang=to_lang)
-        if key :
-            return "Firtly imput default language"
-        if key == None :
-            return "Empty text"
-        else:
-            return "Empty text"
-    return "Empty text"
+    ign = request.json
+    for key in ign:
+        if ign['text'] and check_lang(ign['to_lang']):
+            result = res.translate(ign['text'],to_lang=ign['to_lang'])
+            out = {"error" : False,
+                   "result" : result}
+            return out
+        if ign['text'] and Unset == True:
+            result = res.translate(ign['text'],to_lang=to_lang)
+            out = {'error' : False,
+                   'result' : result}
+            return out
+        if ign['text'] and ign['to_lang'] == '' and Unset == False:
+            out = {'error' : True,
+                   'description' : 'Firtly imput default language'}
+            return out
+        if ign['text'] and check_lang(ign['to_lang']) == False:
+            out = {"error" : True,
+                "Description" : 'Unsupported language format'}
+            return out
+        if ign['text'] == "" :
+            out = {'error' : True,
+                   'description' : "Empty text"}
+            return out
 
 
 @post('/api/v1/default_language')
 def hundler():
     global Unset, to_lang
-    for key in request.json:
-        if check_lang(key) and Unset == False:
-            ### change None -> def
+    ign = request.json
+    for key in ign:
+        if ign['Unset'] == False and check_lang(ign['lang']) == True:
             Unset = True
-            to_lang = key
-            return "Default language is " + str(to_lang)
-        if check_lang(key) and Unset == True:
-            ### change lang def -> def
-            to_lang = key
-            return "Default language is " + str(to_lang)
-        if key == 'False' and Unset == True:
-            ### change def -> None
-            Unset == False
+            to_lang = ign['lang']
+            out = {'error' : False}
+            return out
+        if ign['Unset'] == False and check_lang(ign['lang']) == False:
+            out = {'error' : True,
+                   'description' : 'Unsupported language format'}
+            return out
+        if ign['Unset'] == True:
+            Unset = False
             to_lang = False
-            return "Default language is not exhibited"
-        else:
-            return "Uncorrect language"
-        
+            out = {'error' : False}
+            return out
+
 
 @get('/api/v1/get_default_language')
 def hundler():
     if Unset and to_lang:
-        return 'Default language is ' + str(to_lang)
+        out = {'error' : False,
+               'lang' : to_lang}
+        print(Unset, to_lang)
+        return out
     else:
-        return 'Default language is not exhibited'
+        out = {'error' : True,
+               'description' : 'Default language is not exhibited'}
+        print(Unset, to_lang)
+        return out
 
 run(host='92.118.114.138', port=8080)
