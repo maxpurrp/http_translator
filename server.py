@@ -37,6 +37,11 @@ def hundler():
     try:
         res = GoogleTranslator()
         ign = request.json
+        if 'text' not in ign.keys():
+            out = {'error' : True,
+                'description' : "Not found key : text"}
+            response.status = 400
+            return out
         for key in ign:
             for elem in ign['text']:
                 if elem.isdigit():
@@ -90,7 +95,18 @@ def hundler():
     try:
         global Unset, to_lang
         ign = request.json
+        if ign == {}:
+            out = {'error' : True,
+                'description' : "Not found key : lang/Unset"}
+            response.status = 400
+            return out
         for key in ign:
+            if ign['Unset'] == True:
+                Unset = False
+                to_lang = False
+                out = {'error' : False}
+                return out
+
             for elem in ign['lang']:
                 if elem.isdigit():
                     raise ValueError('Unsupported value format')
@@ -112,13 +128,7 @@ def hundler():
                     'description' : 'Unsupported language format'}
                 response.status = 400
                 return out
-            
-            if ign['Unset'] == True:
-                Unset = False
-                to_lang = False
-                out = {'error' : False}
-                return out
-    
+
     except ValueError:
         ign = {'error' : True,
                'description' : 'Unsupported value format'}
@@ -142,7 +152,7 @@ def hundler():
             return out
         else:
             out = {'error' : False,
-                'description' : 'Default language is not exhibited'}
+                'lang' : None}
             return out
     except  :
         ign = {'error' : True,
