@@ -53,7 +53,7 @@ Request:
 	Method: Post
 		Path: /api/v1/default_language
 		Headers: Content-type: json
-		Body: {“Unset” : False,“lang” : ”ru”}
+		Body: {“Unset” : False,“lang” : ”ru”} or {“Unset” : True}
 	Response:
 		Headers: Content-type: json
 	HTTP Code 200
