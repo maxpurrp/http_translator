@@ -5,6 +5,7 @@ import sys
 Unset = False
 to_lang = False
 
+
 def check_lang(lang):
     x = GoogleTranslator()
     x = x.get_languages_list()
