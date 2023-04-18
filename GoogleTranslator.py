@@ -8,5 +8,8 @@ class GoogleTranslator(Translator):
         translation = translator.translate(text=text, src=from_lang, dest = to_lang)
         return translation.text
     
-    def get_languages_list(self) -> dict:
-        return LANGCODES
+    def get_languages_list(self) -> list:
+        lang_list = []
+        for value in  LANGCODES.values():
+            lang_list.append(value)
+        return lang_list
