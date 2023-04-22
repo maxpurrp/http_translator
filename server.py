@@ -18,28 +18,35 @@ class RequestsHandler():
         return output_json
     def translate(self, input_json) -> str:
         try:
+            if input_json == None:
+                raise TypeError('Expected json')
             if input_json == {}:
                 raise KeyError("Excpected json as input")
-            if self._check_word_of_sentence(input_json['text']) == True:
+            if 'text' not in input_json or 'to_lang' not in input_json:
                 raise ValueError('Unsupported value format')
             if self._check_lang(input_json['to_lang']) == False and self.to_lang == None:
                 raise ValueError('Unsupported value format')
-            
-            if self.to_lang != None:
-                output_json = {'error' : False, 'result' : str(self.translator.translate(input_json['text'],to_lang=translator.to_lang))}
-            if self.to_lang != None and self._check_lang(input_json['to_lang']):
-                output_json = {"error" : False, "result" : str(self.translator.translate(input_json['text'],to_lang=input_json['to_lang']))}
+            cur_lang = input_json['to_lang']
+            if cur_lang == '':
+                cur_lang = self.to_lang
+            output_json = {"error" : False, "result" : str(self.translator.translate(input_json['text'],to_lang=cur_lang))}
             return output_json
-    
-        except KeyError:
+        
+        except TypeError as e:
             output_json = {'error' : True,
-                'description' : 'Excpected json as input'}
+                'description' : str(e)}
             response.status = 400
             return output_json
         
-        except ValueError:
+        except KeyError as e:
             output_json = {'error' : True,
-                'description' : 'Unsupported value format'}
+                'description' : str(e)}
+            response.status = 400
+            return output_json
+        
+        except ValueError as e:
+            output_json = {'error' : True,
+                'description' : str(e)}
             response.status = 400
             return output_json
         
@@ -52,7 +59,11 @@ class RequestsHandler():
         try:
             if input_json == {}:
                 raise KeyError("Excpected json as input")
-        
+            if input_json == None:
+                raise TypeError('Expected json')
+            if 'to_lang' not in input_json or 'Unset' not in input_json:
+                raise ValueError('Unsupported value format')
+            
             if input_json['Unset'] == True:
                     self.Unset = False
                     self.to_lang = None
@@ -69,16 +80,22 @@ class RequestsHandler():
                 'description' : 'Unsupported language format'}
                 response.status = 400
             return output_json
-
-        except KeyError:
+        
+        except ValueError as e:
             output_json = {'error' : True,
-               'description' : "Excpected json as input"}
+               'description' : str(e)}
             response.status = 400
             return output_json
-
-        except ValueError:
+        
+        except TypeError as e:
             output_json = {'error' : True,
-               'description' : 'Unsupported value format'}
+               'description' : str(e)}
+            response.status = 400
+            return output_json
+        
+        except KeyError as e:
+            output_json = {'error' : True,
+               'description' : str(e)}
             response.status = 400
             return output_json
 
@@ -107,17 +124,6 @@ class RequestsHandler():
                 if lang == elem:
                     return True
             return False
-    def _check_word_of_sentence(self, text):
-        if text == "":
-            return False
-        else:
-            update = text.split()
-            for elem in update:
-                for i in range(len(elem)-1):
-                    if elem[i].isalpha() and elem[i+1].isnumeric() or elem[i+1].isalpha() and elem[i].isnumeric():
-                        return True
-            return False
-
 translator = RequestsHandler()
 @get('/api/v1/available_languages')
 def handler():
