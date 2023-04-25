@@ -3,7 +3,7 @@ from GoogleTranslator import GoogleTranslator
 
 localhost, port = '92.118.114.138', 8080
 class RequestsHandler():
-    def __init__(self, unset = False, default_language = None) -> None:
+    def __init__(self, default_language = None) -> None:
         self.translator = GoogleTranslator()
         self.default_language = default_language
 
@@ -29,21 +29,18 @@ class RequestsHandler():
             
             
             if input_json['unset'] == True:
-                    self.unset = False
                     self.default_language = None
             else:
                 if 'lang' not in input_json:
                     raise KeyError('Expected lang in json')
                 if self._check_lang(input_json['lang']) == False:
                     raise ValueError('Invalid language')
-                self.unset = True
                 self.default_language = input_json['lang']
             success = True
             return success
-    
     def get_default_language(self) -> bool:
             return self.default_language
-
+    
     def _check_lang(self, lang):
         return lang in self.translator.get_languages_list()
 translator = RequestsHandler()
