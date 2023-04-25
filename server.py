@@ -1,162 +1,101 @@
 from bottle import get, post, request, response,  run # or route
 from GoogleTranslator import GoogleTranslator
-import sys
 
-Unset = False
-to_lang = False
+localhost, port = '92.118.114.138', 8080
+class RequestsHandler():
+    def __init__(self, default_language = None) -> None:
+        self.translator = GoogleTranslator()
+        self.default_language = default_language
 
-def check_lang(lang):
-    x = GoogleTranslator()
-    x = x.get_languages_list()
-    for key in x:
-        if lang == x[key]:
-            return True
-    return False
-
-
-@get('/api/v1/available_languages')
-def hundler():
-    try:
-        res = GoogleTranslator()
-        res = res.get_languages_list()
-        out = []
-        for key, value in res.items():
-            out.append(value)
-        ign = {"error": False, "languages" : out}
-        return ign
-    except :
-        ign = {'error' : True,
-            'description' : sys.exc_info()[1]}
-        response.status = 500 
-        return ign
-
-
-
-@post('/api/v1/translate')
-def hundler():
-    try:
-        res = GoogleTranslator()
-        ign = request.json
-        if 'text' not in ign.keys():
-            out = {'error' : True,
-                'description' : "Not found key : text"}
-            response.status = 400
-            return out
-        for key in ign:
-            for elem in ign['text']:
-                if elem.isdigit():
-                    raise ValueError('Unsupported value format')
-                
-            if ign['text'] and check_lang(ign['to_lang']):
-                result = res.translate(ign['text'],to_lang=ign['to_lang'])
-                out = {"error" : False,
-                    "result" : result}
-                return out
+    def get_languages_list(self) -> list:
+        return self.translator.get_languages_list()
+    def translate(self, input_json) -> str:
+        if input_json == None:
+            raise TypeError('Expected json')
+        if 'text' not in input_json or 'to_lang' not in input_json:
+            raise KeyError('Expected text and to_lang in json')
+        if self._check_lang(input_json['to_lang']) == False and self.default_language == None:
+            raise ValueError('Invalid language')
+        cur_lang = input_json['to_lang']
+        if cur_lang == '':
+            cur_lang = self.default_language
+        result = self.translator.translate(input_json['text'],to_lang=cur_lang)
+        return result
+    def save_default_language(self, input_json) -> bool:
+            if input_json == None:
+                raise TypeError('Expected json')
+            if 'unset' not in input_json:
+                raise KeyError('Expected unset in json')
             
-            if ign['text'] and Unset == True:
-                result = res.translate(ign['text'],to_lang=to_lang)
-                out = {'error' : False,
-                    'result' : result}
-                return out
             
-            if ign['text'] and ign['to_lang'] == '' and Unset == False:
-                out = {'error' : True,
-                    'description' : 'Firtly imput default language'}
-                response.status = 400
-                return out
-            
-            if ign['text'] and check_lang(ign['to_lang']) == False:
-                out = {"error" : True,
-                    "Description" : 'Unsupported language format'}
-                response.status = 400
-                return out
-            
-            if ign['text'] == "" :
-                out = {'error' : True,
-                    'description' : "Empty text"}
-                response.status = 400
-                return out
-            
-    except ValueError:
-        ign = {'error' : True,
-               'description' : 'Unsupported value format'}
-        response.status = 400
-        return ign
+            if input_json['unset'] == True:
+                    self.default_language = None
+            else:
+                if 'lang' not in input_json:
+                    raise KeyError('Expected lang in json')
+                if self._check_lang(input_json['lang']) == False:
+                    raise ValueError('Invalid language')
+                self.default_language = input_json['lang']
+            success = True
+            return success
+    def get_default_language(self) -> bool:
+            return self.default_language
     
-    except :
-        ign = {'error' : True,
-               'description' : str(sys.exc_info()[1])}
+    def _check_lang(self, lang):
+        return lang in self.translator.get_languages_list()
+translator = RequestsHandler()
+@get('/api/v1/available_languages')
+def handler():
+    try:
+        result =  translator.get_languages_list()
+        response.status = 200
+        output_json = {'error' : False, 'languages' : result}
+    except Exception as e:
         response.status = 500
-        return ign
+        output_json = {'error' : True, 'description' : 'Unhandled exception'}
+        print(e)
+    return output_json
+    
+@post('/api/v1/translate')
+def handler():
+    try :
+        result =  translator.translate(request.json)
+        output_json = {"error" : False, "result" : result}
 
+    except (TypeError, KeyError, ValueError) as e:
+            output_json = {'error' : True, 'description' : str(e)}
+            response.status = 400
+    except Exception as e  :
+            output_json = {'error' : True, 'description' : 'Unhandled exception'}
+            response.status = 500
+            print(e)
+    return output_json
 
 @post('/api/v1/default_language')
-def hundler():
+def handler():
     try:
-        global Unset, to_lang
-        ign = request.json
-        if ign == {}:
-            out = {'error' : True,
-                'description' : "Not found key : lang/Unset"}
-            response.status = 400
-            return out
-        for key in ign:
-            if ign['Unset'] == True:
-                Unset = False
-                to_lang = False
-                out = {'error' : False}
-                return out
+        if translator.save_default_language(request.json):
+            output_json = {'error' : False}
+        else:
+             output_json = {'error' : True, 'description' : "Can't save default language"}
 
-            for elem in ign['lang']:
-                if elem.isdigit():
-                    raise ValueError('Unsupported value format')
-            
-            if ign['lang'] == "":
-                out = {'error' : True,
-                    'description' : "Empty text"}
-                response.status = 400
-                return out
-            
-            if ign['Unset'] == False and check_lang(ign['lang']) == True:
-                Unset = True
-                to_lang = ign['lang']
-                out = {'error' : False}
-                return out
-            
-            if ign['Unset'] == False and check_lang(ign['lang']) == False:
-                out = {'error' : True,
-                    'description' : 'Unsupported language format'}
-                response.status = 400
-                return out
-
-    except ValueError:
-        ign = {'error' : True,
-               'description' : 'Unsupported value format'}
+    except (TypeError, KeyError, ValueError) as e:
+        output_json = {'error' : True, 'description' : str(e)}
         response.status = 400
-        return ign
-
-    except :
-        ign = {'error' : True,
-            'description' : str(sys.exc_info()[1])}
+    except Exception as e :
+        output_json = {'error' : True, 'description' : 'Unhandled exception'}
         response.status = 500 
-        return ign
-        
-
+        print(e)
+    return output_json
 
 @get('/api/v1/default_language')
-def hundler():
+def handler():
     try:
-        if Unset and to_lang:
-            out = {'error' : False,
-                'lang' : to_lang}
-            return out
-        else:
-            out = {'error' : False,
-                'lang' : None}
-            return out
-    except  :
-        ign = {'error' : True,
-               'description' : sys.exc_info()[1]} 
+        result = translator.get_default_language()
+        output_json = {'error' : False, 'lang' : result}
+    except Exception as e :
+        output_json = {'error' : True, 'description' : 'Unhandled exception'} 
         response.status = 500
-        return ign
-run(host='92.118.114.138', port=8080)
+        print(e)
+    return output_json
+run(host = localhost, port = port)
