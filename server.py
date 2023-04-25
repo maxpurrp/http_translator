@@ -3,10 +3,9 @@ from GoogleTranslator import GoogleTranslator
 
 localhost, port = '92.118.114.138', 8080
 class RequestsHandler():
-    def __init__(self, unset = False, to_lang = None) -> None:
+    def __init__(self, unset = False, defaulte_language = None) -> None:
         self.translator = GoogleTranslator()
-        self.unset = unset
-        self.to_lang = to_lang
+        self.defaulte_language = defaulte_language
 
     def get_languages_list(self) -> list:
         return self.translator.get_languages_list()
@@ -15,11 +14,11 @@ class RequestsHandler():
             raise TypeError('Expected json')
         if 'text' not in input_json or 'to_lang' not in input_json:
             raise KeyError('Expected text and to_lang in json')
-        if self._check_lang(input_json['to_lang']) == False and self.to_lang == None:
+        if self._check_lang(input_json['to_lang']) == False and self.defaulte_language == None:
             raise ValueError('Invalid language')
         cur_lang = input_json['to_lang']
         if cur_lang == '':
-            cur_lang = self.to_lang
+            cur_lang = self.defaulte_language
         result = self.translator.translate(input_json['text'],to_lang=cur_lang)
         return result
     def save_default_language(self, input_json) -> bool:
@@ -27,26 +26,23 @@ class RequestsHandler():
                 raise TypeError('Expected json')
             if 'unset' not in input_json:
                 raise KeyError('Expected unset in json')
-            if self._check_lang(input_json['lang']) == False:
-                 raise ValueError('Unvalid language')
+            
             
             if input_json['unset'] == True:
                     self.unset = False
-                    self.to_lang = None
-                    errors = False
-
-            if self._check_lang(input_json['lang']) == True:
-                if input_json['unset'] == False:
-                    self.unset = True
-                    self.to_lang = input_json['lang']
-                    errors = False
-            return errors
-    def get_default_language(self) -> bool:
-            if self.unset and self.to_lang:
-                result = self.to_lang
+                    self.defaulte_language = None
             else:
-                result = None
-            return result
+                if 'lang' not in input_json:
+                    raise KeyError('Expected lang in json')
+                if self._check_lang(input_json['lang']) == False:
+                    raise ValueError('Invalid language')
+                self.unset = True
+                self.defaulte_language = input_json['lang']
+            success = True
+            return success
+    
+    def get_default_language(self) -> bool:
+            return self.defaulte_language
 
     def _check_lang(self, lang):
         if lang =="":
@@ -64,6 +60,7 @@ def handler():
     except Exception as e:
         response.status = 500
         output_json = {'error' : True, 'description' : str(e)}
+        print(e)
     return output_json
     
 @post('/api/v1/translate')
@@ -74,28 +71,28 @@ def handler():
         return output_json
 
     except (TypeError, KeyError, ValueError) as e:
-            output_json = {'error' : True,
-                'description' : str(e)}
+            output_json = {'error' : True, 'description' : str(e)}
             response.status = 400
-    except :
-            output_json = {'error' : True,
-                'description' : 'Unhandled exception'}
+    except Exception as e  :
+            output_json = {'error' : True, 'description' : 'Unhandled exception'}
             response.status = 500
+            print(e)
     return output_json
 
 @post('/api/v1/default_language')
 def handler():
     try:
-        result = translator.save_default_language(request.json)
-        output_json = {'error' : result}
-        return output_json
+        if translator.save_default_language(request.json):
+            output_json = {'error' : False}
+            return output_json
 
     except (TypeError, KeyError, ValueError) as e:
         output_json = {'error' : True, 'description' : str(e)}
         response.status = 400
-    except :
+    except Exception as e :
         output_json = {'error' : True, 'description' : 'Unhandled exception'}
         response.status = 500 
+        print(e)
     return output_json
 
 @get('/api/v1/default_language')
@@ -103,8 +100,9 @@ def handler():
     try:
         result = translator.get_default_language()
         output_json = {'error' : False, 'lang' : result}
-    except :
+    except Exception as e :
         output_json = {'error' : True, 'description' : 'Unhandled exception'} 
         response.status = 500
+        print(e)
     return output_json
 run(host = localhost, port = port)
