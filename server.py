@@ -3,9 +3,9 @@ from GoogleTranslator import GoogleTranslator
 
 localhost, port = '92.118.114.138', 8080
 class RequestsHandler():
-    def __init__(self, unset = False, defaulte_language = None) -> None:
+    def __init__(self, unset = False, default_language = None) -> None:
         self.translator = GoogleTranslator()
-        self.defaulte_language = defaulte_language
+        self.default_language = default_language
 
     def get_languages_list(self) -> list:
         return self.translator.get_languages_list()
@@ -14,11 +14,11 @@ class RequestsHandler():
             raise TypeError('Expected json')
         if 'text' not in input_json or 'to_lang' not in input_json:
             raise KeyError('Expected text and to_lang in json')
-        if self._check_lang(input_json['to_lang']) == False and self.defaulte_language == None:
+        if self._check_lang(input_json['to_lang']) == False and self.default_language == None:
             raise ValueError('Invalid language')
         cur_lang = input_json['to_lang']
         if cur_lang == '':
-            cur_lang = self.defaulte_language
+            cur_lang = self.default_language
         result = self.translator.translate(input_json['text'],to_lang=cur_lang)
         return result
     def save_default_language(self, input_json) -> bool:
@@ -30,26 +30,22 @@ class RequestsHandler():
             
             if input_json['unset'] == True:
                     self.unset = False
-                    self.defaulte_language = None
+                    self.default_language = None
             else:
                 if 'lang' not in input_json:
                     raise KeyError('Expected lang in json')
                 if self._check_lang(input_json['lang']) == False:
                     raise ValueError('Invalid language')
                 self.unset = True
-                self.defaulte_language = input_json['lang']
+                self.default_language = input_json['lang']
             success = True
             return success
     
     def get_default_language(self) -> bool:
-            return self.defaulte_language
+            return self.default_language
 
     def _check_lang(self, lang):
-        if lang =="":
-            return False
-        if lang in self.translator.get_languages_list():
-                return True
-        return False
+        return lang in self.translator.get_languages_list()
 translator = RequestsHandler()
 @get('/api/v1/available_languages')
 def handler():
@@ -59,7 +55,7 @@ def handler():
         output_json = {'error' : False, 'languages' : result}
     except Exception as e:
         response.status = 500
-        output_json = {'error' : True, 'description' : str(e)}
+        output_json = {'error' : True, 'description' : 'Unhandled exception'}
         print(e)
     return output_json
     
@@ -68,7 +64,6 @@ def handler():
     try :
         result =  translator.translate(request.json)
         output_json = {"error" : False, "result" : result}
-        return output_json
 
     except (TypeError, KeyError, ValueError) as e:
             output_json = {'error' : True, 'description' : str(e)}
@@ -84,7 +79,8 @@ def handler():
     try:
         if translator.save_default_language(request.json):
             output_json = {'error' : False}
-            return output_json
+        else:
+             output_json = {'error' : True, 'description' : "Can't save default language"}
 
     except (TypeError, KeyError, ValueError) as e:
         output_json = {'error' : True, 'description' : str(e)}
